@@ -24,3 +24,5 @@ services:
 volumes:
   wire-pod-data:
     driver: local
+  wire-pod-images:
+    driver: local
