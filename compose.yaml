@@ -2,7 +2,7 @@ services:
   wire-pod:
     container_name: wire-pod
     hostname: escapepod
-    image: ghcr.io/kercre123/wire-pod:main
+    build: .
     restart: unless-stopped
     environment:
       WIREPOD_DATA_DIR: /data
