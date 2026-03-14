@@ -145,4 +145,10 @@ fi
 
 apply_env_overrides
 
+if [ -x /usr/local/bin/updatevectorip ]; then
+    if ! /usr/local/bin/updatevectorip; then
+        echo "Warning: updatevectorip failed during startup" >&2
+    fi
+fi
+
 exec "$@"
