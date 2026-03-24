@@ -1,3 +1,4 @@
+name: escapepod
 services:
   wire-pod:
     container_name: wire-pod
