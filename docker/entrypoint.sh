@@ -149,6 +149,15 @@ if [ -x /usr/local/bin/updatevectorip ]; then
     if ! /usr/local/bin/updatevectorip; then
         echo "Warning: updatevectorip failed during startup" >&2
     fi
+
+    (
+        while true; do
+            sleep 600
+            if ! /usr/local/bin/updatevectorip; then
+                echo "Warning: periodic updatevectorip failed" >&2
+            fi
+        done
+    ) &
 fi
 
 exec "$@"

@@ -1,13 +1,13 @@
+# Le but de ce script est de résoudre l'adresse IPv4 de l'hôte "vector.local", de l'exporter en tant que variable d'environnement et de mettre à jour un fichier de configuration défini avec cette adresse IP. 
+
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Host Vector a resoudre (modifiable facilement)
+# Variables de configuration
 VECTOR="vector.local"
-
 ENV_VAR_NAME="VECTOR_IP"
-BOTSDK_JSON="/data/chipper/jdocs/botSdkInfo.json"
-BACKUP_JSON="${BOTSDK_JSON}.bak"
-PROFILE_FILE="/etc/profile.d/vector_ip_env.sh"
+FILE_TO_UPDATE="/data/chipper/jdocs/botSdkInfo.json"
+SUBSTITUTION_FUNCTION='s/("ip_address"[[:space:]]*:[[:space:]]*")[^"]*(")/\1__IP__\2/'
 
 is_ipv4() {
     local value="$1"
@@ -57,13 +57,11 @@ replace_json_ip() {
     local ip="$1"
     local file="$2"
     local tmp_file="${file}.tmp"
+    local sed_expr
 
-    if ! grep -q '"ip_address"[[:space:]]*:' "$file"; then
-        echo "Erreur : clé \"ip_address\" introuvable dans $file" >&2
-        return 1
-    fi
+    sed_expr="${SUBSTITUTION_FUNCTION//__IP__/${ip}}"
 
-    sed -E "s/(\"ip_address\"[[:space:]]*:[[:space:]]*\")[^\"]*(\")/\1${ip}\2/" "$file" >"$tmp_file"
+    sed -E "$sed_expr" "$file" >"$tmp_file"
     mv "$tmp_file" "$file"
 }
 
@@ -74,22 +72,24 @@ fi
 
 export "${ENV_VAR_NAME}=${IP}"
 
-if [[ -d "$(dirname "$PROFILE_FILE")" ]]; then
-    printf 'export %s="%s"\n' "$ENV_VAR_NAME" "$IP" >"$PROFILE_FILE" || true
-    chmod 0644 "$PROFILE_FILE" 2>/dev/null || true
+ENV_FILE="/etc/profile.d/${ENV_VAR_NAME,,}_env.sh"
+if [[ -d "$(dirname "$ENV_FILE")" ]]; then
+    printf 'export %s="%s"\n' "$ENV_VAR_NAME" "$IP" >"$ENV_FILE" || true
+    chmod 0644 "$ENV_FILE" 2>/dev/null || true
 fi
 
-if [[ ! -f "$BOTSDK_JSON" ]]; then
-    echo "Erreur : fichier introuvable $BOTSDK_JSON" >&2
+if [[ ! -f "$FILE_TO_UPDATE" ]]; then
+    echo "Erreur : fichier introuvable $FILE_TO_UPDATE" >&2
     exit 1
 fi
 
-cp "$BOTSDK_JSON" "$BACKUP_JSON"
-replace_json_ip "$IP" "$BOTSDK_JSON"
+cp "$FILE_TO_UPDATE" "$(basename "$FILE_TO_UPDATE").backup"
+replace_json_ip "$IP" "$FILE_TO_UPDATE"
 
 echo "$VECTOR IPv4 address: $IP"
+echo "File updated : $FILE_TO_UPDATE"
 echo "Environment variable exported : $ENV_VAR_NAME"
-echo "Backup file : $BACKUP_JSON"
-echo "botSdkInfo.json updated"
+echo "Backup file : $(basename "$FILE_TO_UPDATE").backup"
+
 
 exit 0

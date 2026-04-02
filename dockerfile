@@ -163,16 +163,17 @@ COPY --from=builder /opt/vosk/libvosk /opt/vosk/libvosk
 COPY --from=builder /src /opt/wire-pod
 COPY --from=builder /build/chipper /opt/wire-pod/chipper/chipper
 COPY --from=builder /build/.wirepod-version /opt/wire-pod/.wirepod-version
-COPY updatevectorip.sh /opt/wire-pod/updatevectorip.sh
+COPY scripts/updatevectorip.sh /opt/wire-pod/scripts/updatevectorip.sh
 
 RUN rm -rf .git && \
     chmod +x \
         /opt/wire-pod/setup.sh \
         /opt/wire-pod/update.sh \
-        /opt/wire-pod/updatevectorip.sh \
+        /opt/wire-pod/scripts/updatevectorip.sh \
         /opt/wire-pod/chipper/start.sh \
         /opt/wire-pod/docker/entrypoint.sh && \
-    ln -sfn /opt/wire-pod/updatevectorip.sh /usr/local/bin/updatevectorip
+    echo 'updatevectorip() { /opt/wire-pod/scripts/updatevectorip.sh "$@"; }' >> /etc/bash.bashrc && \
+    ln -sfn /opt/wire-pod/scripts/updatevectorip.sh /usr/local/bin/updatevectorip
 
 VOLUME ["/data"]
 
